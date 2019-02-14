@@ -13,12 +13,12 @@ class FengTest extends PHPUnit_Framework_TestCase
         }
     }
 
-    public function testCreateInstance()
-    {
-        $casper = new Casper(self::$casperBinPath);
+    // public function testCreateInstance()
+    // {
+    //     $casper = new Casper(self::$casperBinPath);
 
-        $this->assertInstanceOf('Browser\Casper', $casper);
-    }
+    //     $this->assertInstanceOf('Browser\Casper', $casper);
+    // }
 
     public function testFetchText()
     {
@@ -42,4 +42,25 @@ class FengTest extends PHPUnit_Framework_TestCase
 
         var_dump($output);
     }
+
+    public function testJdGetDesc() {
+        $casper = new Casper(self::$casperBinPath);
+        $casper->setDebug(true);
+        $casper->setUserAgent('Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.96 Safari/537.36');
+        $casper->setAccept('application/x-javascript');
+        $skuId = '3547445';
+        $url = 'http://cd.jd.com/description/channel?skuId='.$skuId.'&mainSkuId='.$skuId.'&cdn=2';
+        $casper->debugPage($url);
+        $casper->run();
+        $output = $casper->getOutput(); 
+        var_dump($output);
+
+        $obj = json_decode($output[0]);
+
+        var_dump($obj);
+
+        print($obj->content);
+    }
+
+    // 视频地址 https://c.3.cn/tencent/video_v3?callback=jQuery3160969&vid=1338327&type=1&from=1&appid=24&_=1550123103913
 }

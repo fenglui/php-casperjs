@@ -36,6 +36,7 @@ class Casper
     private $statusText = '';
     private $cookies = [];
     private $pageSettings_loadImages = false;
+    private $accept = 'text/html';
 
     public function __construct($path2casper = null, $loadImages = false, $tempDir = null)
     {
@@ -106,6 +107,16 @@ casper.page.customHeaders = {
     public function setUserAgent($userAgent)
     {
         $this->userAgent = $userAgent;
+    }
+
+    /**
+     * Set the Accept
+     *
+     * @param string $accept
+     */
+    public function setAccept($accept)
+    {
+        $this->accept = $accept;
     }
 
     /**
@@ -201,6 +212,8 @@ FRAGMENT;
         $this->clear();
         $verbose = $this->isDebug() ? 'true' : 'false';
         $loadImages = $this->pageSettings_loadImages ? 'true' : 'false';
+        // $accept = 'text/html';
+        $accept = $this->accept;
 
         $fragment = <<<FRAGMENT
 var xpath = require('casper').selectXPath;
@@ -224,7 +237,7 @@ casper.userAgent('$this->userAgent');
 casper.start().then(function() {
     this.open('$url', {
         headers: {
-            'Accept': 'text/html'
+            'Accept': '$accept'
         }
     });
 });
@@ -628,9 +641,10 @@ FRAGMENT;
             throw new \Exception('Can not find CasperJS.');
         }
 
-        if ($this->isDebug()) {
-            $this->setOutput($output);
-        } else {
+        $this->setOutput($output);
+        $this->processOutput();
+
+        if (!$this->isDebug()) {
             $res = [];
             foreach ($output as $outputLine) {
                 $posPhantom = strpos($outputLine, '[phantom]');
@@ -641,8 +655,6 @@ FRAGMENT;
             }
             $this->setOutput($res);
         }
-        
-        $this->processOutput();
 
         unlink($filename);
 
@@ -674,6 +686,7 @@ FRAGMENT;
             if ($this->isDebug()) {
                 syslog(LOG_INFO, '[PHP-CASPERJS] ' . $outputLine);
             }
+
             if (strpos(
                 $outputLine,
                 $this->TAG_CURRENT_PAGE_CONTENT
@@ -785,6 +798,57 @@ casper.then(function() {
 FRAGMENT;
 
         $this->script .= $fragment;
+
+        return $this;
+    }
+
+    public function getPageContent()
+    {
+        $fragment = <<<FRAGMENT
+        this.echo(this.getPageContent().replace(new RegExp('\\r?\\n','g'), ''));
+FRAGMENT;
+
+        $this->script .= $fragment;
+
+        return $this;
+    }
+
+    /**
+     * Logs the textual contents of the current page directly to the standard output, for debugging purpose:
+     *
+     * @param string $url
+     *
+     * @return \Browser\Casper
+     */
+    public function debugPage($url)
+    {
+        $this->clear();
+        $verbose = $this->isDebug() ? 'true' : 'false';
+        $fragment = <<<FRAGMENT
+var xpath = require('casper').selectXPath;
+var casper = require('casper').create({
+    verbose: $verbose,
+    // logLevel: 'debug',
+    colorizerType: 'Dummy',
+    pageSettings: {
+        javascriptEnabled: true,
+        localToRemoteUrlAccessEnabled: true,
+        loadImages: false, // The WebPage instance used by Casper will
+        loadPlugins: false, // use these settings
+        // userAgent
+        // =========PhantomJS specific settings==========
+        // webSecurityEnabled defines whether web security should be enabled or not (defaults to true)
+        webSecurityEnabled: true
+    }
+});
+
+casper.userAgent('$this->userAgent');
+casper.start('$url', function() {
+    this.debugPage();
+});
+FRAGMENT;
+
+        $this->script = $fragment;
 
         return $this;
     }
