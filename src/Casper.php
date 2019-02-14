@@ -35,11 +35,15 @@ class Casper
     private $status;
     private $statusText = '';
     private $cookies = [];
+    private $pageSettings_loadImages = false;
 
-    public function __construct($path2casper = null, $tempDir = null)
+    public function __construct($path2casper = null, $loadImages = false, $tempDir = null)
     {
         if ($path2casper) {
             $this->path2casper = $path2casper;
+        }
+        if ($loadImages) {
+            $this->pageSettings_loadImages = $loadImages;
         }
         if ($tempDir) {
             $this->tempDir = $tempDir;
@@ -196,12 +200,24 @@ FRAGMENT;
     {
         $this->clear();
 
+        $loadImages = $this->pageSettings_loadImages ? 'true' : 'false';
+
         $fragment = <<<FRAGMENT
 var xpath = require('casper').selectXPath;
 var casper = require('casper').create({
-    verbose: true,
-    logLevel: 'debug',
-    colorizerType: 'Dummy'
+    verbose: false,
+    // logLevel: 'debug',
+    colorizerType: 'Dummy',
+    pageSettings: {
+        javascriptEnabled: true,
+        localToRemoteUrlAccessEnabled: true,
+        loadImages: $loadImages, // The WebPage instance used by Casper will
+        loadPlugins: false, // use these settings
+        // userAgent
+        // =========PhantomJS specific settings==========
+        // webSecurityEnabled defines whether web security should be enabled or not (defaults to true)
+        webSecurityEnabled: true
+    }
 });
 
 casper.userAgent('$this->userAgent');
@@ -364,11 +380,16 @@ FRAGMENT;
      */
     public function waitForSelector($selector, $timeout = 5000)
     {
+        $success = '';
+        if ($this->isDebug()) {
+            $success = 'this.echo(\'found selector "'.$selector.'"\');';
+        }
+        
         $fragment = <<<FRAGMENT
 casper.waitForSelector(
     '$selector',
     function () {
-        this.echo('found selector "$selector"');
+        $success
     },
     function () {
         this.echo('timeout occured');

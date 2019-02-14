@@ -23,15 +23,16 @@ class FengTest extends PHPUnit_Framework_TestCase
     public function testFetchText()
     {
         $casper = new Casper(self::$casperBinPath);
-        $casper->setOptions(['verbose' => false, 'logLevel' => 'error']);
         $casper->setDebug(false);
 
         $url = 'http://www.tuotuoniu.com';
         $casper->start($url);
-
         // brand
+        $casper->waitForSelector('a.navbar-brand');
         $casper->fetchText('a.navbar-brand');
+        
         // h1
+        $casper->waitForSelector('h1.display-4');
         $casper->fetchText('h1.display-4');
 
         $casper->run();
