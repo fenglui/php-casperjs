@@ -576,16 +576,16 @@ FRAGMENT;
         $output = array();
 
         $fragment = <<<FRAGMENT
-casper.then(function () {
-    this.echo('$this->TAG_CURRENT_URL' + this.getCurrentUrl());
-    this.echo('$this->TAG_CURRENT_TITLE' + this.getTitle());
-    this.echo('$this->TAG_CURRENT_PAGE_CONTENT' + this.getPageContent().replace(new RegExp('\\r?\\n','g'), ''));
-    this.echo('$this->TAG_CURRENT_HTML' + this.getHTML().replace(new RegExp('\\r?\\n','g'), ''));
-    this.echo('$this->TAG_CURRENT_HEADERS' + JSON.stringify(this.currentResponse.headers));
-    this.echo('$this->TAG_CURRENT_STATUS' + this.currentResponse.status);
-    this.echo('$this->TAG_CURRENT_STATUS_TEXT' + this.currentResponse.statusText);
-    this.echo('$this->TAG_CURRENT_COOKIES' + JSON.stringify(phantom.cookies));
-});
+// casper.then(function () {
+//     this.echo('$this->TAG_CURRENT_URL' + this.getCurrentUrl());
+//     this.echo('$this->TAG_CURRENT_TITLE' + this.getTitle());
+//     this.echo('$this->TAG_CURRENT_PAGE_CONTENT' + this.getPageContent().replace(new RegExp('\\r?\\n','g'), ''));
+//     this.echo('$this->TAG_CURRENT_HTML' + this.getHTML().replace(new RegExp('\\r?\\n','g'), ''));
+//     this.echo('$this->TAG_CURRENT_HEADERS' + JSON.stringify(this.currentResponse.headers));
+//     this.echo('$this->TAG_CURRENT_STATUS' + this.currentResponse.status);
+//     this.echo('$this->TAG_CURRENT_STATUS_TEXT' + this.currentResponse.statusText);
+//     this.echo('$this->TAG_CURRENT_COOKIES' + JSON.stringify(phantom.cookies));
+// });
 
 casper.run();
 
@@ -607,7 +607,20 @@ FRAGMENT;
             throw new \Exception('Can not find CasperJS.');
         }
 
-        $this->setOutput($output);
+        if ($this->isDebug()) {
+            $this->setOutput($output);
+        } else {
+            $res = [];
+            foreach ($output as $outputLine) {
+                $posPhantom = strpos($outputLine, '[phantom]');
+                if ($posPhantom) {
+                    continue;
+                }
+                $res[] = $outputLine;
+            }
+            $this->setOutput($res);
+        }
+        
         $this->processOutput();
 
         unlink($filename);
@@ -738,5 +751,20 @@ FRAGMENT;
     public function getCookies()
     {
         return $this->cookies;
+    }
+
+    public function fetchText($selector)
+    {
+        $fragment = <<<FRAGMENT
+casper.then(function() {
+    var txt = this.fetchText('$selector')
+    this.echo(txt);
+    // return txt;
+});
+FRAGMENT;
+
+        $this->script .= $fragment;
+
+        return $this;
     }
 }
