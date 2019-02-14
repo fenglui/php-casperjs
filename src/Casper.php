@@ -199,13 +199,13 @@ FRAGMENT;
     public function start($url)
     {
         $this->clear();
-
+        $verbose = $this->isDebug() ? 'true' : 'false';
         $loadImages = $this->pageSettings_loadImages ? 'true' : 'false';
 
         $fragment = <<<FRAGMENT
 var xpath = require('casper').selectXPath;
 var casper = require('casper').create({
-    verbose: false,
+    verbose: $verbose,
     // logLevel: 'debug',
     colorizerType: 'Dummy',
     pageSettings: {

@@ -36,7 +36,10 @@ class FengTest extends PHPUnit_Framework_TestCase
         $casper->fetchText('h1.display-4');
 
         $casper->run();
-        $output = $casper->getOutput();
-        print_r($output);
+        $output = $casper->getOutput();      
+
+        var_dump($casper);
+
+        var_dump($output);
     }
 }
